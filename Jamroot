@@ -1,0 +1,184 @@
+# (c) Copyright 2011-2014 Felipe Magno de Almeida
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import feature ;
+import modules ;
+
+feature.feature ghtv-disable-java : off on : composite link-incompatible ;
+
+if ! --ghtv-without-java in [ modules.peek : ARGV ]
+{
+  .has-java = true ;
+}
+
+import qt4 ;
+import feature ;
+# if $(.has-java)
+# {
+#   import java : jar ;
+# }
+
+feature.feature ghtv-phonon-lower-case-dir : on off : composite ;
+feature.compose <ghtv-phonon-lower-case-dir>on : <define>GHTV_PHONON_LOWER_CASE_DIR ;
+
+# if $(.has-java)
+# {
+# jar ghtv-qt-java
+#  :
+#    java/classloader/XletClassLoader.java
+#    java/classloader/SecurityManager.java
+#    java/classloader/ByteCodeInputStream.java/<nested-class>State,1
+#    java/ghtv/xlet/XletContextImpl.java
+#    java/ghtv/awt/QImage.java
+#    java/ghtv/awt/QGraphics2D.java
+#    java/ghtv/awt/QForm.java
+#    java/ghtv/awt/LwuitComponent.java
+#    java/ghtv/debug/ErrorWriter.java
+#    java/com/sun/dtv/lwuit/Image.java
+#    java/com/sun/dtv/lwuit/Form.java
+#    java/ghtv/lang/System.java
+#    java/ghtv/util/Properties.java
+#    java/javax/tv/service/selection/ServiceContextImpl.java
+#    java/javax/tv/service/selection/VideoServiceContentHandler.java
+#    java/javax/tv/service/ServiceImpl.java
+#    java/javax/tv/locator/LocatorImpl.java
+#    /jvm//jvm_options
+#  : <java.dependency>/ghtv-java//ghtv-jar/<include>java
+#    <java.dependency.bootclasspath>/ghtv-java//ghtv-jar/<include>java
+#    # <java.dependency>/ghtv-java//ghtv-dtv/<include>java
+#    # <java.dependency.bootclasspath>/ghtv-java//ghtv-dtv/<include>java
+#    # <java.dependency>/ghtv-java//ghtv-tv/<include>java
+#    # <java.dependency.bootclasspath>/ghtv-java//ghtv-tv/<include>java
+#    # <java.dependency>/ghtv-java//ghtv-jmf/<include>java
+#    # <java.dependency.bootclasspath>/ghtv-java//ghtv-jmf/<include>java
+#    # <java.dependency>/ghtv-java//ghtv-io/<include>java
+#    # <java.dependency.bootclasspath>/ghtv-java//ghtv-io/<include>java
+#  ;
+# explicit ghtv-qt-java ;
+# }
+
+project ghtv-ncl-player
+ : requirements <define>BOOST_ALL_NO_LIB=1 <threading>multi
+   <define>FUSION_MAX_VECTOR_SIZE=20
+   <define>BOOST_MPL_LIMIT_VECTOR_SIZE=50
+   <define>BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+   <toolset>gcc:<cxxflags>-Wno-unused-local-typedefs
+ ;
+
+if $(.has-java)
+{
+alias ghtv-cpp-java-sources : 
+   src/java/java_widget.cpp src/java/awt/graphics2d.cpp src/java/awt/form.cpp
+   src/java/component_window.cpp src/java/awt/component.cpp
+   src/java/awt/font.cpp src/java/awt/container.cpp src/java/file_input_stream.cpp
+   src/java/tv_container.cpp
+   include/ghtv/qt/java/java_widget.hpp
+   include/ghtv/qt/java/component_window.hpp
+   /javabind//javabind/<link>static
+ ;
+}
+
+local rule java-dependencies ( )
+{
+  if $(.has-java)
+  {
+    return ghtv-cpp-java-sources /jvm//jvm ;
+  }
+  else 
+  {
+    return ;
+  }
+}
+
+local rule other-properties ( )
+{
+  if $(.has-java)
+  {
+    return ;
+  }
+  else 
+  {
+    return <define>GHTV_DISABLE_JAVA <ghtv-disable-java>on ;
+  }
+}
+
+exe ghtv-ncl-player
+ : src/main.cpp src/main_window.cpp src/ncl/ncl_widget.cpp src/ncl/errors.cpp
+   src/ncl/lua/canvas.cpp src/ncl/lua/events.cpp src/ncl/lua/sandbox.cpp
+   src/ncl/live_media_info.cpp src/ncl/audio_player.cpp src/ncl/image_player.cpp
+   src/ncl/text_player.cpp src/ncl/lua/lua_player.cpp src/ncl/video_player.cpp
+   src/ncl/player_factory.cpp src/ncl/url_file.cpp src/ncl/testsuite_window.cpp
+   src/ncl/start_test_window.cpp src/ncl/running_test_window.cpp
+   src/ncl/stopped_test_window.cpp src/ncl/common_player.cpp
+   include/ghtv/qt/main_window.hpp include/ghtv/qt/ncl/ncl_widget.hpp
+   include/ghtv/qt/ncl/lua/lua_player.hpp
+   include/ghtv/qt/ncl/lua/lua_socket.hpp
+   include/ghtv/qt/ncl/debug/debug_media_window.hpp
+   include/ghtv/qt/ncl/debug/medias_table_widget.hpp
+   include/ghtv/qt/ncl/debug/presentations_table_widget.hpp
+   include/ghtv/qt/ncl/debug/live_media_info.hpp
+   include/ghtv/qt/ncl/executor_widget.hpp
+   include/ghtv/qt/ncl/debug/errors.hpp
+   include/ghtv/qt/ncl/player/audio_player.hpp
+   include/ghtv/qt/ncl/player/html_player.hpp
+   include/ghtv/qt/ncl/player/ncl_player.hpp
+   include/ghtv/qt/ncl/player/image_player.hpp
+   include/ghtv/qt/ncl/player/video_player.hpp
+   include/ghtv/qt/ncl/player/text_player.hpp
+   include/ghtv/qt/ncl/player/url_file.hpp
+   include/ghtv/qt/resolution_action.hpp
+   include/ghtv/qt/ncl/testsuite/testsuite_window.hpp
+   include/ghtv/qt/ncl/testsuite/start_test_window.hpp
+   include/ghtv/qt/ncl/testsuite/running_test_window.hpp
+   include/ghtv/qt/ncl/testsuite/stopped_test_window.hpp
+   include/ghtv/qt/ncl/player/common_player.hpp
+   include/ghtv/qt/dsmcc_download.hpp
+   include/ghtv/qt/poll_thread.hpp
+   [ java-dependencies ]
+   /qt//QtGui /qt//QtNetwork /qt//QtWebKit /gntl//gntl /libxml2//libxml2 /phonon//phonon
+   /lua//lua /luabind//luabind/<link>static /boost//program_options/<link>static
+   /boost//system/<link>static /boost//filesystem/<link>static
+   /boost//thread/<link>static
+ : <include>include <define>QT_NO_KEYWORDS # <define>LUABIND_MAX_ARITY=10
+   <target-os>linux:<source>include/ghtv/qt/reception.hpp
+   <target-os>linux:<source>src/reception.cpp
+   <target-os>linux:<source>include/ghtv/qt/dsmcc_download.hpp
+   <target-os>linux:<source>src/dsmcc_download.cpp
+   <target-os>linux:<source>include/ghtv/qt/poll_thread.hpp
+   <target-os>linux:<source>src/poll_thread.cpp
+   <target-os>linux:<source>/gts//gts
+   <toolset>gcc:<cxxflags>-Wno-delete-non-virtual-dtor
+   [ other-properties ]
+ : <user-interface>gui
+ ;
+explicit ghtv-ncl-player ;
+
+# local rule install-java-dependencies ( )
+# {
+#   if $(.has-java)
+#   {
+#     return ghtv-qt-java ;
+#   }
+#   else 
+#   {
+#     return ;
+#   }
+# }
+
+install install : # [ install-java-dependencies ]
+  ghtv-ncl-player
+ : <install-dependencies>on <install-type>EXE
+ <install-type>SHARED_LIB <install-type>PDB <install-type>MANIFEST
+ <install-type>JAR ;
